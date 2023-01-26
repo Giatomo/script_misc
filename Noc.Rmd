@@ -1,0 +1,92 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(readr)
+library(readxl)
+library(seqinr)
+library(here)
+```
+
+```{r}
+domains <- read_tsv("/home/thomas/BioinformaticsTools/Interproscan/Bdellovibrio_bacteriovorus_genomic_refseq.fasta.tsv",
+                    col_names = c("Protein_accession",
+                                    "Sequence_MD5_digest",
+                                    "Sequence_length",
+                                    "Analysis",
+                                    "Signature_accession", 
+                                    "Signature_description",
+                                    "Start",
+                                    "Stop",
+                                    "Score", 
+                                    "Status",
+                                    "Date", 
+                                    "InterPro_accession", 
+                                    "InterPro_description"))
+
+omics <- read_excel("/home/thomas/LalouxLab/USERS DATA/Thomas Lamot/Data/Bdellovibrio -omics public data/Bdellovibrio_data_cleaned_v1.xlsx", skip = 3)
+TM_DNA <- read_tsv("/home/thomas/DNA_TM.tsv",
+                   col_names = c("accession",
+                                  "length",
+                                  "ExpAA",
+                                  "First60",
+                                  "PredHel",
+                                  "Topology"))
+```
+
+
+```{r}
+dna <- domains %>% 
+  group_by(Protein_accession) %>% 
+  mutate(Score = parse_number(Score, na = c("-"))) %>% 
+  filter(Score <= 1) %>% 
+  filter(any(str_detect(Signature_description, "DNA") | str_detect(InterPro_description, "DNA"))) %>% 
+  filter(any(str_detect(Signature_description, "binding") | str_detect(InterPro_description, "binding"))) 
+
+fasta <- read.fasta("/home/thomas/Bdellovibrio_bacteriovorus_genomic_refseq.fasta") 
+
+fasta[names(fasta) %in% DNA_binding] %>%  write.fasta(names(fasta)[names(fasta) %in% DNA_binding], "/home/thomas/HD100_DNA_binding.fasta")
+
+
+DNA_binding <- dna %>%
+  inner_join(omics %>% mutate(locus_tag = str_c("BD_", locus_tag)), by = c("Protein_accession" = "locus_tag")) %>% 
+  select(Protein_accession, old_locus_tag, gene, product, Score, Signature_description, InterPro_description) %>% unique(x = .$Protein_accession)
+
+dna %>%
+  inner_join(omics %>% mutate(locus_tag = str_c("BD_", locus_tag)), by = c("Protein_accession" = "locus_tag")) %>% 
+  select(Protein_accession, old_locus_tag, gene, product, Score, Signature_description, InterPro_description) %>% 
+  write_csv("/home/thomas/LalouxLab/USERS DATA/Thomas Lamot/Data/DNA_binding_proteins.csv")
+
+
+dna %>%
+  inner_join(omics %>% mutate(locus_tag = str_c("BD_", locus_tag)), by = c("Protein_accession" = "locus_tag")) %>% 
+  select(Protein_accession, old_locus_tag, gene, product, Score, Signature_description, InterPro_description) %>% 
+  filter(is.na(gene) & str_detect(product, "hypothetical")) %>% distinct() %>% 
+  rowwise() %>% 
+  unique(x = .$old_locus_tag)
+
+
+TM_DNA %>% 
+  filter(ExpAA >= 10)
+
+```
+```{r}
+membrane <- domains %>% 
+  group_by(Protein_accession) %>% 
+  filter(str_detect(Signature_description, "membrane") | str_detect(InterPro_description, "membrane"))
+```
+```{r}
+dna %>% inner_join(membrane, by = "Protein_accession")
+```
+
+```{r}
+domains %>%  
+  filter(Protein_accession %in% intersect(membrane$Protein_accession, dna$Protein_accession))
+```
+```{r}
+dna %>% 
+  filter(str_detect(Signature_description, "binding") | str_detect(InterPro_description, "binding"))
+```

@@ -1,0 +1,59 @@
+```{r}
+raw_data_folder <- "/run/media/thomas/DATA/MICROSCOPY/2022-05-03/" |> fs::path()
+focis_parameters <- "/home/thomas/Bureau/Foci_parameters.params"
+
+phase_folder <- raw_data_folder / "Phase"
+fluo_folder <- raw_data_folder / "Fluo"
+focis_detected_folder <- raw_data_folder / "Findfoci"
+mask_folder <- raw_data_folder / "Mask"
+
+phase_channel <- 1
+fluo_channel <- 0
+
+```
+
+```{r}
+folders_to_create <- c(phase_folder, fluo_folder, focis_detected_folder, mask_folder) 
+
+image_files <- raw_data_folder |> fs::dir_ls(glob = "*.nd2")
+
+for (folder in folders_to_create) {
+    if (!fs::dir_exists(folder)) {
+        cli::cli_alert_info(glue::glue("'{folder}' don't exist. Creating '{folder}'"))
+        fs::dir_create(folder)
+    }
+}
+```
+
+# %s is the series index,
+# %z is the Z section index,
+# %c is the channel index,
+# %t is the timepoint index
+# (all indices begin at 0).
+
+```{r}
+bfconvert_path <- "/home/thomas/BioinformaticsTools/bftools/bfconvert"
+
+for (image in image_files) {
+    command <- glue::glue("{bfconvert_path} -channel {phase_channel} {image} {phase_folder / fs::path_ext_remove(fs::path_file(image)) + '_serie%s' + '.tiff'}")
+    
+    print(command)
+    system(command)
+    command <- glue::glue("{bfconvert_path} -channel {fluo_channel} {image} {fluo_folder / fs::path_ext_remove(fs::path_file(image)) + '_serie%s' + '.tiff'}")
+    print(command)
+    system(command)
+}
+```
+
+```{r}
+command <- "~/Fiji/ImageJ-linux64 -macro run_microbeJ_batch ~/Fiji/macros"
+system(command, wait = FALSE)
+
+
+tmp_macro <- glue::glue('run("FindFoci Batch", "input_directory={fluo_folder} mask_directory={mask_folder} parameter_file={focis_parameters} output_directory={focis_detected_folder} multi-thread show_log_messages");')
+tmp_macro_file <- fs::file_temp(ext = "ijm")
+cat(tmp_macro, file = tmp_macro_file)
+
+command <- glue::glue("~/Fiji/ImageJ-linux64 -macro {fs::path_ext_remove(fs::path_file(tmp_macro_file))} {fs::path_dir(tmp_macro_file)}")
+
+```

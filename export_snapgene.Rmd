@@ -1,0 +1,18 @@
+```{r}
+install.packages(c("tidyverse", "fs"))
+```
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(fs)
+file <- fs_path(rstudioapi::getSourceEditorContext()$path %>% path_dir())/"GL Primers Collection.xlsx"
+read_xlsx(file) %>% 
+  select("GL#","_5'_3'_sequence","Usage") %>% 
+  rename(sequence = "_5'_3'_sequence") %>% 
+  drop_na() %>% 
+  mutate(sequence = str_trim(sequence)) %>% 
+  write_csv(file %>% fs::path_ext_set(".snapgene.csv"), col_names = FALSE)
+```
+
+

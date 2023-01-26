@@ -1,0 +1,91 @@
+```{r}
+library(tidyverse)
+library(ape)
+library(fs)
+library(here)
+library(sys)
+library(seqinr)
+library(metablastr)
+library(Biostrings)
+library(progress)
+```
+ 
+```{r message=FALSE, include=FALSE, results='hide'}
+
+home_dir <- fs::path(here())
+ihf_consencus <- home_dir/"IHFa_cons.fasta"
+merR_consencus <- home_dir/"MerR_cons.fasta"
+candidates_fasta = home_dir/"candidates.fasta"
+
+temp <- readAAStringSet(merR_consencus)
+names <- names(temp)
+temp <- str_remove_all(temp, "-") %>% toupper() %>% AAStringSet()
+names(temp) <- names
+writeXStringSet(temp, filepath = merR_consencus, append = FALSE)
+
+temp <- readAAStringSet(ihf_consencus)
+names <- names(temp)
+temp <- str_remove_all(temp, "-") %>% toupper() %>% AAStringSet()
+names(temp) <- names
+writeXStringSet(temp, filepath = ihf_consencus, append = FALSE)
+
+gff_dir <- home_dir/"gff"
+prot_dir <- home_dir/"proteomes"
+genome_dir <- home_dir/"genomes"
+
+files_to_process <- dir_ls(gff_dir, glob = "*.gff") %>% fs::path_ext_remove() %>% fs::path_file()
+
+
+length(dir_ls(gff_dir))
+length(dir_ls(prot_dir))
+length(dir_ls(genome_dir))
+i <- 1
+tryCatch(
+  for (file in files_to_process) {
+    print(paste0(i,"/",length(files_to_process)))
+    tryCatch(
+      {
+      proteome_file <- file %>% path_ext_set("fasta")
+      
+      if (!fs::file_exists(prot_dir/proteome_file)) {next}
+      
+      print("Searching IHFa homologs...")
+      candidates_ihf <- blast_protein_to_protein(query = prot_dir/proteome_file, subject = ihf_consencus, output.path = home_dir/"blast_results/", cores = 4)
+      candidates_ihf <- candidates_ihf %>% filter(bit_score == max(bit_score) | evalue == min(evalue)) %>%  select(query_id) %>% unique()
+ 
+      
+      print("Searching neighbooring sequences...")
+      gff = read.gff(gff_dir/path_ext_set(file, "gff"))
+      gff <- gff %>% 
+        filter(type == "CDS") %>% 
+        mutate(attributes = str_extract_all(attributes, "\\w+=\\w+")) %>% 
+        unnest_longer(attributes) %>% extract(attributes, into = c("key", "value"), regex = "(\\w+)=(\\w+)") %>% 
+        pivot_wider(names_from = key, values_from = value)
+      neighbours_ihf_sequences <- gff %>% mutate(n1 = lag(locus_tag),                                                                                                                                                                                              n2 = lag(locus_tag, n=2),
+                                                 n3 = lead(locus_tag),
+                                                 n4 = lead(locus_tag, n=2)) %>% 
+        inner_join(candidates_ihf, by= c("locus_tag"="query_id")) %>% nest(neighbours = c(n1,n2,n3,n4)) %>% select(neighbours) %>% unlist() %>% as.character()
+      
+      print("Reading Genome...")
+      proteome <- readAAStringSet(prot_dir/proteome_file)
+      
+      print("Wrinting neighbooring sequences to fasta..")
+      candidates_merR <- proteome[neighbours_ihf_sequences]
+      writeXStringSet(candidates_merR,  filepath = candidates_fasta)
+      print("Searching MerR homologs...")
+      putative_zapT <- blast_protein_to_protein(query = candidates_fasta, subject = merR_consencus, output.path = home_dir/"blast_results/", cores = 4)
+      print("Saving to file...")
+      writeXStringSet(candidates_merR[unique(putative_zapT$query_id)], filepath = home_dir/"zapT_results.fasta", append = TRUE)
+    },
+    error = function(e) {
+      print(paste0("Unable to process ", file))
+    }
+    )
+  i <- i+1
+  }
+)
+```
+ 
+```{r}
+```
+ 

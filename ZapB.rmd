@@ -1,0 +1,281 @@
+```{r}
+
+library(tidyverse)
+library(readxl)
+
+
+```
+
+```{r}
+
+ZapT_Bb <- read_xlsx("~/ZapT_bb.xlsx") |>
+ mutate(query = "ZapT_Bb") |> 
+ janitor::clean_names() |> 
+ mutate(
+    species = str_extract(taxonomic_lineage, "\\w+\\s\\w+(?=\\s\\(species\\))"),
+    genus =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    family =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(family\\))"),
+    order =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    class =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(class\\))"),
+    phylum =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(phylum\\))"),
+    superkingdom =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(superkingdom\\))"),
+ ) |> filter(!is.na(family))
+MatP_Ec <- read_xlsx("~/MatP_Ec.xlsx") |> mutate(query = "MatP_Ec")|> 
+ janitor::clean_names() |> 
+ mutate(
+    species = str_extract(taxonomic_lineage, "\\w+\\s\\w+(?=\\s\\(species\\))"),
+    genus =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    family =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(family\\))"),
+    order =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    class =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(class\\))"),
+    phylum =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(phylum\\))"),
+    superkingdom =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(superkingdom\\))"),
+ ) |> filter(!is.na(family))
+ZapA_Bb <- read_xlsx("~/ZapA_Bb.xlsx") |> mutate(query = "ZapA_Bb")|> 
+ janitor::clean_names() |> 
+ mutate(
+    species = str_extract(taxonomic_lineage, "\\w+\\s\\w+(?=\\s\\(species\\))"),
+    genus =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    family =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(family\\))"),
+    order =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    class =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(class\\))"),
+    phylum =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(phylum\\))"),
+    superkingdom =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(superkingdom\\))"),
+ ) |> filter(!is.na(family))
+ZapA_Ec <- read_xlsx("~/ZapA_Ec.xlsx") |> mutate(query = "ZapA_Ec")|> 
+ janitor::clean_names() |> 
+ mutate(
+    species = str_extract(taxonomic_lineage, "\\w+\\s\\w+(?=\\s\\(species\\))"),
+    genus =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    family =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(family\\))"),
+    order =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    class =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(class\\))"),
+    phylum =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(phylum\\))"),
+    superkingdom =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(superkingdom\\))"),
+ ) |> filter(!is.na(family))
+ZapA_Cc <- read_xlsx("~/ZapA_Cc.xlsx") |> mutate(query = "ZapA_Cc")|> 
+ janitor::clean_names() |> 
+ mutate(
+    species = str_extract(taxonomic_lineage, "\\w+\\s\\w+(?=\\s\\(species\\))"),
+    genus =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    family =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(family\\))"),
+    order =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    class =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(class\\))"),
+    phylum =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(phylum\\))"),
+    superkingdom =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(superkingdom\\))"),
+ ) |> filter(!is.na(family))
+
+ZauP_Cc <- read_xlsx("~/ZauP_Cc.xlsx") |> mutate(query = "ZauP_Cc")|> 
+ janitor::clean_names() |> 
+ mutate(
+    species = str_extract(taxonomic_lineage, "\\w+\\s\\w+(?=\\s\\(species\\))"),
+    genus =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    family =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(family\\))"),
+    order =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    class =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(class\\))"),
+    phylum =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(phylum\\))"),
+    superkingdom =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(superkingdom\\))"),
+ ) |> filter(!is.na(family))
+
+ZapB_Ec <- read_xlsx("~/ZapB_Ec.xlsx") |> mutate(query = "ZapB_Ec")|> 
+ janitor::clean_names() |> 
+ mutate(
+    species = str_extract(taxonomic_lineage, "\\w+\\s\\w+(?=\\s\\(species\\))"),
+    genus =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    family =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(family\\))"),
+    order =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    class =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(class\\))"),
+    phylum =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(phylum\\))"),
+    superkingdom =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(superkingdom\\))"),
+ ) |> filter(!is.na(family))
+
+ZauP_Bf <- read_xlsx("~/ZauP_Bf.xlsx") |> mutate(query = "ZauP_Bf")|> 
+ janitor::clean_names() |> 
+ mutate(
+    species = str_extract(taxonomic_lineage, "\\w+\\s\\w+(?=\\s\\(species\\))"),
+    genus =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    family =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(family\\))"),
+    order =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    class =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(class\\))"),
+    phylum =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(phylum\\))"),
+    superkingdom =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(superkingdom\\))"),
+ ) |> filter(!is.na(family))
+
+ZauP_capno <- read_xlsx("~/ZauP_capno.xlsx") |> mutate(query = "ZauP_capno")|> 
+ janitor::clean_names() |> 
+ mutate(
+    species = str_extract(taxonomic_lineage, "\\w+\\s\\w+(?=\\s\\(species\\))"),
+    genus =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    family =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(family\\))"),
+    order =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    class =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(class\\))"),
+    phylum =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(phylum\\))"),
+    superkingdom =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(superkingdom\\))"),
+ ) |> filter(!is.na(family))
+
+ZauP_Cv <- read_xlsx("~/ZauP_Cv.xlsx") |> mutate(query = "ZauP_CV")|> 
+ janitor::clean_names() |> 
+ mutate(
+    species = str_extract(taxonomic_lineage, "\\w+\\s\\w+(?=\\s\\(species\\))"),
+    genus =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    family =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(family\\))"),
+    order =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    class =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(class\\))"),
+    phylum =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(phylum\\))"),
+    superkingdom =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(superkingdom\\))"),
+ ) |> filter(!is.na(family))
+
+ZauP_TIGR02449 <- read_xlsx("~/ZauP_TIGR02449.xlsx") |> mutate(query = "TIGR02449")|> 
+ janitor::clean_names() |> 
+ mutate(
+    species = str_extract(taxonomic_lineage, "\\w+\\s\\w+(?=\\s\\(species\\))"),
+    genus =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    family =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(family\\))"),
+    order =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(order\\))"),
+    class =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(class\\))"),
+    phylum =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(phylum\\))"),
+    superkingdom =  str_extract(taxonomic_lineage, "\\w+(?=\\s\\(superkingdom\\))"),
+ ) |> filter(!is.na(family))
+
+all <- bind_rows(ZapA_Bb, ZapA_Cc, ZapA_Ec, MatP_Ec, ZapT_Bb, ZauP_Cc, ZapB_Ec, ZauP_Bf, ZauP_capno,ZauP_Cv, ZauP_TIGR02449)
+```
+
+
+```{r}
+all |> 
+select(-c(from, entry, organism, taxonomic_lineage, taxonomic_lineage_ids, organism_id)) |> 
+mutate(value = TRUE) |>
+distinct() |> pivot_wider(names_from = query) |> mutate(across(-c(species, genus, family, order, class, phylum, superkingdom), ~replace_na(.x, FALSE))) |>
+filter(ZapT_Bb & ZapB_Ec)
+
+all |> 
+select(-c(from, entry, organism, taxonomic_lineage, taxonomic_lineage_ids, organism_id)) |> 
+mutate(value = TRUE) |>
+distinct() |> pivot_wider(names_from = query) |> mutate(across(-c(species, genus, family, order, class, phylum, superkingdom), ~replace_na(.x, FALSE))) |>
+filter(ZapT_Bb & MatP_Ec)
+
+all |> 
+select(-c(from, entry, organism, taxonomic_lineage, taxonomic_lineage_ids, organism_id)) |> 
+mutate(value = TRUE) |>
+distinct() |>
+group_by(species, genus, family, order, class, phylum, superkingdom) |>
+mutate(n = n()) |>
+ungroup()|>
+pivot_wider(names_from = query) |> 
+mutate(across(-c(species, genus, family, order, class, phylum, superkingdom), ~replace_na(.x, FALSE))) |> View()
+
+
+all |> 
+select(-c(species, genus, from, entry, organism, taxonomic_lineage, taxonomic_lineage_ids, organism_id)) |> 
+mutate(value = TRUE) |>
+distinct() |>
+mutate(family = fct_reorder2(family, phylum, class)) |>
+ggplot(aes(y = family, x = query, fill = query)) + geom_tile() -> plt
+
+
+plotly::ggplotly(plt)
+
+
+all |> 
+select(-c(species, genus, from, entry, organism, taxonomic_lineage, taxonomic_lineage_ids, organism_id)) |> 
+mutate(value = TRUE) |>
+distinct() |>
+filter(!str_detect(query, "ZapA")) |>
+filter(!str_detect(query, "ZapT")) |>
+filter(!str_detect(query, "MatP")) |>
+mutate(family = fct_reorder2(family, phylum, class)) |>
+ggplot(aes(y = family, x = query, fill = query)) + geom_tile() -> plt
+
+
+all |> 
+select(-c(species, genus, from, entry, organism, taxonomic_lineage, taxonomic_lineage_ids, organism_id)) |> 
+mutate(value = TRUE) |>
+distinct() |>
+filter(str_detect(query, "ZapA")) |>
+mutate(family = fct_reorder2(family, phylum, class)) |>
+ggplot(aes(y = family, x = query)) + geom_tile()
+
+all |> 
+select(-c(species, genus, from, entry, organism, taxonomic_lineage, taxonomic_lineage_ids, organism_id)) |> 
+mutate(value = TRUE) |>
+distinct() |>
+filter(query %in% c("ZapA_Ec", "ZapT_Bb", "MatP_Ec")) |>
+mutate(family = fct_reorder2(family, phylum, class)) |>
+ggplot(aes(y = family, x = query)) + geom_tile()
+
+all |> 
+select(-c(species, genus, from, entry, organism, taxonomic_lineage, taxonomic_lineage_ids, organism_id)) |> 
+mutate(value = TRUE) |>
+distinct() |>
+filter(str_detect(query, "_Ec")| query == "ZapT_Bb") |>
+mutate(family = fct_reorder2(family, phylum, class)) |>
+ggplot(aes(y = family, x = query)) + geom_tile()
+
+all |> 
+select(-c(species, genus, from, entry, organism, taxonomic_lineage, taxonomic_lineage_ids, organism_id)) |> 
+mutate(value = TRUE) |>
+distinct() |>
+filter(query %in% c("ZapB_Ec", "ZauP_Cc")) |>
+mutate(family = fct_reorder2(family, phylum, class)) |>
+ggplot(aes(y = family, x = query)) + geom_tile()
+
+```
+
+```{r}
+all |> 
+select(-c(species, genus, family, from, entry, organism, taxonomic_lineage, taxonomic_lineage_ids, organism_id)) |> 
+mutate(value = TRUE) |>
+distinct() |> pivot_wider(names_from = query) |> mutate(across(-c(order, class, phylum, superkingdom), ~replace_na(.x, FALSE))) |>
+ggplot(aes(y = family, x = query))
+
+
+
+all |> 
+select(-c(species, genus, from, entry, organism, taxonomic_lineage, taxonomic_lineage_ids, organism_id)) |> 
+mutate(value = TRUE) |>
+distinct() |>
+mutate(order = fct_reorder2(order, phylum, class)) |>
+ggplot(aes(y = order, x = query, fill = query)) + geom_tile()
+
+
+all |> 
+select(-c(species, genus, from, entry, organism, taxonomic_lineage, taxonomic_lineage_ids, organism_id)) |> 
+mutate(value = TRUE) |>
+distinct() |>
+filter(!str_detect(query, "ZapA")) |>
+mutate(order = fct_reorder2(order, phylum, class)) |>
+ggplot(aes(y = order, x = query)) + geom_tile()
+
+all |> 
+select(-c(species, genus, from, entry, organism, taxonomic_lineage, taxonomic_lineage_ids, organism_id)) |> 
+mutate(value = TRUE) |>
+distinct() |>
+filter(str_detect(query, "ZapA")) |>
+mutate(order = fct_reorder2(order, phylum, class)) |>
+ggplot(aes(y = order, x = query)) + geom_tile()
+
+all |> 
+select(-c(species, genus, from, entry, organism, taxonomic_lineage, taxonomic_lineage_ids, organism_id)) |> 
+mutate(value = TRUE) |>
+distinct() |>
+filter(query %in% c("ZapA_Ec", "ZapT_Bb", "MatP_Ec")) |>
+mutate(order = fct_reorder2(order, phylum, class)) |>
+ggplot(aes(y = order, x = query)) + geom_tile()
+
+all |> 
+select(-c(species, genus, from, entry, organism, taxonomic_lineage, taxonomic_lineage_ids, organism_id)) |> 
+mutate(value = TRUE) |>
+distinct() |>
+filter(str_detect(query, "_Ec")| query == "ZapT_Bb") |>
+mutate(order = fct_reorder2(order, phylum, class)) |>
+ggplot(aes(y = order, x = query)) + geom_tile()
+
+all |> 
+select(-c(species, genus, from, entry, organism, taxonomic_lineage, taxonomic_lineage_ids, organism_id)) |> 
+mutate(value = TRUE) |>
+distinct() |>
+filter(query %in% c("ZapB_Ec", "ZauP_Cc")) |>
+mutate(order = fct_reorder2(order, phylum, class)) |>
+ggplot(aes(y = order, x = query)) + geom_tile()
+
+```

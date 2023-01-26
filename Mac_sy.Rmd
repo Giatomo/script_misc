@@ -1,0 +1,279 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(fs)
+library(tidyverse)
+library(unheadr)
+library(foreach)
+library(doParallel)
+library(multidplyr)
+
+```
+
+```{r}
+
+data_folders <- fs::dir_ls("/run/media/thomas/DATA/BIOINFORMATICS/macsyfind_results/")
+
+taxonomy <- read_delim("/home/thomas/new_taxdump/rankedlineage.dmp",delim = "|", col_names = FALSE) |> 
+  mutate(across(.fns = ~str_remove_all(., "\t"))) |> filter(X10 == "Bacteria") -> bact_tax
+```
+
+
+```{r}
+
+data_folders <- fs::dir_ls("/run/media/thomas/DATA/BIOINFORMATICS/macsyfind_results/")
+l <- map_chr(data_folders, ~path_join(c(., "best_solution.tsv")))
+l <- l[file_exists(l)]
+
+
+doParallel::registerDoParallel(12)
+full <- foreach(file = l, .combine = bind_rows, .multicombine = TRUE, .packages = c("tidyverse", "fs")) %dopar% {
+  
+  df <- file |> 
+    read_tsv(
+      comment = "#",
+      progress = FALSE,
+      col_types = c("cccdccdddddccdddddddc")
+      ) |> 
+    mutate(species = path_dir(file) |> path_file())
+}
+
+full |> write_csv("~/mac_sy_result.csv")
+```
+
+```{r}
+full <- read_csv("~/mac_sy_result.csv")
+```
+
+```{r, include=FALSE, echo=FALSE}
+
+options(ENTREZ_KEY = "ed8fe96edd8feac4fd16d663b6a13efad209")
+
+cluster <- new_cluster(4)
+cluster_library(cluster, "dplyr")
+
+
+l |>
+  path_dir() |>
+  path_file() |> 
+  furrr::future_map_chr(~str_replace_all(., "\\[|\\]", "")) |>
+  furrr::future_map_chr(~str_replace_all(., "_", " ")) -> l
+
+full <- read_csv("~/mac_sy_result.csv")
+full |> full_join(as_tibble(l), by = c("species" = "value")) -> full
+
+full |> 
+  group_by(species) |> 
+  mutate(species = furrr::future_map_chr(species, ~str_replace_all(., "\\[|\\]", "")),
+         species = furrr::future_map_chr(species, ~str_replace_all(., "_", " "))) |> 
+  inner_join(bact_tax, by = c("species" = "X2")) -> full_with_tax
+
+
+
+
+full_with_tax |> 
+  mutate(gene_name = if_else(is.na(gene_name), "None", gene_name)) |> 
+  group_by(species, gene_name) |> 
+  count()|> 
+  filter(gene_name != "FtsK") |> 
+  arrange(desc(n))
+
+full_with_tax |>
+  mutate(gene_name = if_else(is.na(gene_name), "None", gene_name),
+         model_fqn = if_else(is.na(model_fqn), "None", model_fqn)) |> 
+  filter(X7 == "Gammaproteobacteria") |>
+  group_by(tax = X) |> 
+  mutate(n_tax = n()) |> 
+  group_by(tax, model_fqn, n_tax) |> 
+  summarise(n = n()) |> 
+  mutate(perc = n/n_tax) |> 
+  ggplot(aes(x = perc, y = tax, fill = model_fqn)) +
+    geom_bar(position="stack", stat="identity")
+
+full_with_tax |> 
+  filter(!(gene_name == "ZapT" & hit_i_eval >= 1e-15)) |> 
+  mutate(categories = case_when(
+    gene_name %in% c("ZapT", "MatP") ~ "Ter Anchor",
+    gene_name %in% c("FtsK") ~ "DNA Pump",
+    gene_name %in% c("ZapA") ~ "Divisome Anchor",
+    gene_name %in% c("ZauP", "TIGR02449", "ZapB") ~ "Adaptator"
+  )) |>
+  drop_na(categories) |> 
+  filter(X7 == "Alphaproteobacteria") |> 
+  group_by(species, gene_name) |> 
+  summarise(n = n(), tax = as.factor(X6), species = as.factor(species), categories = as.factor(categories)) |> 
+  ungroup() |> 
+  mutate(species = fct_reorder(species , as.numeric(tax)),
+         gene_name = fct_relevel(gene_name, c("FtsK", "MatP", "ZapT", "TIGR02449", "ZauP", "ZapB", "ZapA"))) |> 
+  ggplot(aes(x = gene_name, y = species, fill = tax, alpha = if_else(n >= 1, 1,0))) +
+  geom_tile() +
+  facet_grid(tax ~ categories, switch = "x", scales = "free", space = "free") + 
+  theme_minimal() +
+  theme(axis.text.y=element_blank(),
+        legend.position = "none",
+        strip.text.y.right = element_text(angle = 0))
+  
+
+full_with_tax |> 
+  mutate(gene_name = if_else(is.na(gene_name), "None", gene_name),
+         model_fqn = if_else(is.na(model_fqn), "None", model_fqn)) |> 
+  group_by(species) |> 
+  mutate(n = n()) |> 
+  filter(n <= 2) |> 
+  group_by(gene_name) |> 
+  count()
+
+full_with_tax |>
+  ggplot(aes(x=hit_i_eval)) +
+  geom_density(fill = "cyan") +
+  scale_x_log10() +
+  facet_wrap(~hit_gene_ref)
+
+full_with_tax |> 
+  group_by(gene_name) |> 
+  ggplot(aes(x = hit_i_eval)) +
+  geom_density() +
+  facet_wrap(~gene_name) +
+  scale_x_log10()
+
+mapping <- mapping |>
+  mutate(map = taxize::classification(species, db = "ncbi", max_tries = 20)[[1]] |> filter(rank == "order") |> select(name))
+
+
+mapping_test <- full |>
+  sample_n(1000) |> 
+  group_by(species) |> 
+  mutate(map = taxize::classification(species, db = "ncbi", max_tries = 20)[[1]] |> filter(rank == "order") |> select(name))
+         
+
+```
+
+```{r}
+
+full_with_tax |> 
+  group_by(X7) |> 
+  count()
+
+```
+
+```{r}
+full_with_tax |> 
+  mutate(categories = case_when(
+    gene_name %in% c("ZapT", "MatP") ~ "Ter Anchor",
+    gene_name %in% c("FtsK") ~ "DNA Pump",
+    gene_name %in% c("ZapA") ~ "Divisome Anchor",
+    gene_name %in% c("ZauP", "TIGR02449", "ZapB") ~ "Adaptator"
+  )) |>
+  drop_na(categories) |> 
+  filter(X7 == "Oligoflexia") |> 
+  group_by(species, gene_name) |> View()
+```
+
+```{r}
+
+full_with_tax |> 
+  filter(!(gene_name == "ZapT" & hit_i_eval >= 1e-15)) |> 
+  mutate(categories = case_when(
+    gene_name %in% c("ZapT", "MatP") ~ "Ter Anchor",
+    gene_name %in% c("FtsK") ~ "DNA Pump",
+    gene_name %in% c("ZapA") ~ "Divisome Anchor",
+    gene_name %in% c("ZauP", "TIGR02449", "ZapB") ~ "Adaptator"
+  )) |>
+  drop_na(categories) |> 
+  filter(X7 == "Gammaproteobacteria") |> 
+  group_by(species, gene_name) |> 
+  summarise(n = n(), tax = as.factor(X4), species = as.factor(species), categories = as.factor(categories)) |> 
+  ungroup() |> 
+  mutate(species = fct_reorder(species , as.numeric(tax)),
+         gene_name = fct_relevel(gene_name, c("FtsK", "MatP", "ZapT", "TIGR02449", "ZauP", "ZapB", "ZapA"))) |> 
+  ggplot(aes(x = gene_name, y = species, fill = tax, alpha = if_else(n >= 1, 1,0))) +
+  geom_tile() +
+  facet_grid(tax ~ categories, switch = "x", scales = "free", space = "free") + 
+  theme_minimal() +
+  theme(axis.text.y=element_blank(),
+        legend.position = "none",
+        strip.text.y.right = element_text(angle = 0))
+
+```
+```{r}
+full_with_tax |> 
+  filter(!(gene_name == "ZapT" & hit_i_eval >= 1e-15)) |> 
+  mutate(categories = case_when(
+    gene_name %in% c("ZapT", "MatP") ~ "Ter Anchor",
+    gene_name %in% c("FtsK") ~ "DNA Pump",
+    gene_name %in% c("ZapA") ~ "Divisome Anchor",
+    gene_name %in% c("ZauP", "TIGR02449", "ZapB") ~ "Adaptator"
+  )) |> 
+  filter(categories %in% c("Divisome Anchor", "Adaptator")) |> 
+  arrange(species, hit_pos) |> 
+  group_by(species) |> 
+  filter(n() >= 2) |> 
+  mutate(close = if_else(lag(hit_pos) >= hit_pos-2 & lag(hit_pos) <= hit_pos+2, TRUE, FALSE)) |> 
+  mutate(close = if_else(any(close), TRUE, FALSE, FALSE)) |> 
+#  filter(gene_name == "ZauP") |> 
+  ggplot(aes(x = hit_profile_cov, color = close)) +
+  scale_x_reverse() +
+  geom_density() +
+  facet_wrap(~gene_name)
+
+
+
+
+``` 
+
+```{r}
+full_with_tax |> 
+  filter(!(gene_name == "ZapT" & hit_i_eval >= 1e-15)) |> 
+  mutate(categories = case_when(
+    gene_name %in% c("ZapT", "MatP") ~ "Ter Anchor",
+    gene_name %in% c("FtsK") ~ "DNA Pump",
+    gene_name %in% c("ZapA") ~ "Divisome Anchor",
+    gene_name %in% c("ZauP", "TIGR02449", "ZapB") ~ "Adaptator"
+  )) |> 
+  filter(categories %in% c("Divisome Anchor", "Adaptator")) |> 
+  arrange(species, hit_pos) |> 
+  group_by(species) |> 
+  filter(n() >= 2) |> 
+  mutate(close = if_else(lag(hit_pos) >= hit_pos-2 & lag(hit_pos) <= hit_pos+2, TRUE, FALSE)) |> 
+  mutate(close = if_else(any(close), TRUE, FALSE, FALSE)) |> 
+  ungroup() |> 
+  filter(categories == "Adaptator") |> 
+  infer::chisq_test(gene_name ~ X6)
+```
+
+```{r}
+full_with_tax |> 
+  filter(X7 == "Alphaproteobacteria") |> 
+  filter(!(gene_name == "ZapT" & hit_i_eval >= 1e-15)) |> 
+  mutate(categories = case_when(
+    gene_name %in% c("ZapT", "MatP") ~ "Ter Anchor",
+    gene_name %in% c("FtsK") ~ "DNA Pump",
+    gene_name %in% c("ZapA") ~ "Divisome Anchor",
+    gene_name %in% c("ZauP", "TIGR02449", "ZapB") ~ "Adaptator"
+  )) |> 
+  group_by(species, categories, tax = X5) |> 
+  summarise(n = n()) |> 
+  ungroup() |> 
+  complete(species, categories,  fill = list(n = 0)) -> counted
+
+counted |> 
+  group_by(species) |> 
+  fill(tax, .direction ="downup") |> 
+  group_by(tax, categories) |> 
+  summarise(mean = mean(n), sd(n), n = n()) |> 
+  arrange(desc(n)) |> 
+  filter(any(categories == "Ter Anchor" & mean >= .8) & any(categories == "Adaptator" & mean < 1) & any(categories == "Divisome Anchor" & mean >= 0.8)) |> 
+  filter(categories == "Adaptator")
+  
+counted |> 
+  group_by(species) |> 
+  fill(tax, .direction ="downup") |> 
+  filter(tax == "Sphingomonadaceae")
+ 
+Novosphingobium
+
+```
+

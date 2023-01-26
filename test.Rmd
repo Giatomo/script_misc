@@ -1,0 +1,366 @@
+---
+title: "Curve Fitting"
+output: html_notebook
+---
+
+$$
+ P(t) = p_{min} + \frac{p_{max}-p_{min}}{1 + e^{-r.(t-s)}}
+$$
+
+```{r}
+richard <- function(t, p_max, p_min, r, s){
+  return(p_min + (p_max - p_min)  / (1 + exp(-r * (t - s))))
+}
+
+```
+
+\$\$ \begin{align*}
+P(t) &= p_{min} + \frac{p_{max} - p_{min}}
+                      {1 + e^{-r \cdot (t - s)}} \\
+
+P'(t) &= -\frac{(p_{min} - p_{max}) \cdot r \cdot e^{r \cdot (t - s)}}
+              {(e^{r \cdot (t - s)} + 1)^2} \\
+
+P''(t) &= -\frac{(p_{min} - p_{max}) \cdot r^2 \cdot (e^{r \cdot (t - s)} - 1) \cdot e^{r \cdot (t - s)} }
+               {(e^{r \cdot (t - s)} + 1)^3} \\
+
+P'''(t) &= -\frac{(p_{min} - p_{max}) \cdot r^3 \cdot e^{r \cdot (t - s)} \cdot (e^{2r \cdot (t - s)} - 4e^{r \cdot (t - s}) + 1}
+                {(e^{r \cdot (t - s)} + 1)^4} \\
+\end{align*} \$\$
+
+## Replace $r$ in $P(t)$ by $r_{max}$ which is the extremum of $P'(t)$ *i.e.* the value of $P'(t)$ where $P''(t) = 0$
+
+$$
+-\frac{(p_{min} - p_{max}) . r^2 . (e^{r . (t - s)} - 1) . e^{r . (t - s)} } {(e^{r . (t - s)} + 1)^3} \stackrel{?}{=} 0
+$$
+
+### Case 1 : $p_{min} - p_{max} = 0$
+
+$$
+\begin{align*}
+p_{min} - p_{max} &= 0 \\
+p_{min} &= p_{max}
+\end{align*}
+$$
+
+Result in no growth
+
+### Case 2 : $r^2 = 0$
+
+$$
+\begin{align*}
+r^2 &= 0 \\
+r &= 0
+\end{align*}
+$$
+
+Result in no growth
+
+### Case 3 : $e^{r(t-s)} = 0$
+
+$$
+\begin{align*}
+e^{r \cdot (t - s)} &= 0
+\end{align*}
+$$
+
+Impossible
+
+### Case 4 : $e^{r(t-s)} -1 = 0$
+
+$$
+\begin{align*}
+e^{r \cdot (t - s)} - 1 &= 0 \\
+e^{r \cdot (t - s)} &= 1 \\
+r \cdot (t - s) &= 0 \\
+\end{align*}
+$$
+
+$$
+r = 0
+$$
+
+Result in no growth
+
+$$
+t = s
+$$
+
+Ok
+
+## Determine whether the extremum is a minima, a maxima or 0
+
+Replace $t$ by $s$ in $P'''(t)$
+
+\$\$ \begin{align*}
+P'''(t) &= -\frac{(p_{min} - p_{max}) \cdot r^3 \cdot e^{r \cdot (t - s)} \cdot (e^{2r \cdot (t - s)} - 4e^{r \cdot (t - s)} + 1)}
+                {(e^{r \cdot (t - s)} + 1)^4} \\
+
+P'''(s) &= -\frac{(p_{min} - p_{max}) \cdot r^3 \cdot e^{r \cdot (s - s)} \cdot (e^{2r \cdot (s - s)} - 4e^{r \cdot (s - s)} + 1)}
+                {(e^{r \cdot (s - s)} + 1)^4} \\
+
+P'''(s) &= -\frac{(p_{min} - p_{max}) \cdot r^3 \cdot 1 \cdot (1 - 4 + 1)}
+                {(1 + 1)^4} \\
+
+P'''(s) &= -\frac{-2r^3 \cdot (p_{min} - p_{max}) }
+                {16} \\
+\end{align*} \$\$
+
+### Case 1 : $r > 0$
+
+$$
+P'''(S) < 0 \\
+P'(S) \rightarrow maximum
+$$
+
+### Case 2 : $r < 0$
+
+$$
+P'''(S) > 0 \\
+P'(S) \rightarrow minimum
+$$
+
+### Case 3 : $r = 0$
+
+$$
+P'''(S) < 0 \\
+P'(S) \rightarrow 0
+$$
+
+Let's find the value of the extremum *i.e.* $P'(s)$
+
+\$\$ \begin{align*}
+
+P'(t) &= -\frac{(p_{min} - p_{max}) \cdot r \cdot e^{r \cdot (t - s)}}
+              {(e^{r \cdot (t - s)} + 1)^2} \\
+
+P'(s) &= -\frac{(p_{min} - p_{max}) \cdot r \cdot e^{r \cdot (s - s)}}
+              {(e^{r \cdot (s - s)} + 1)^2} \\
+
+\frac{-4P'(s)}{(p_{min} - p_{max})} &= r \\
+
+\frac{-4r_{max}}{(p_{min} - p_{max})} &= r \\
+
+
+\end{align*} \$\$
+
+Let's then replace $r$ in $P(t)$ by its value
+
+$$
+\begin{align*}
+ P(t) &= p_{min} + \frac{p_{max}-p_{min}}{1 + e^{-r.(t-s)}} \\
+ P(t) &= p_{min} + \frac{p_{max}-p_{min}}{1 + e^{4r_{max}.(t-s)/p_{min}- p_{max}}}
+\end{align*}
+$$
+
+```{r}
+richard2 <- function(t, p_max, p_min, r_max, s){
+  return(p_min + (p_max - p_min)  / (1 + exp(4 * r_max * (t - s)/(p_min - p_max))))
+}
+```
+
+We can now use this new equation to fit our date using a genetic algorithm
+
+```{r}
+fit_richard2 <- function(y, t) {
+  
+  max_y <- max(y)
+  min_y <- min(y)
+  r_boundary <- plyr::round_any(max_y-min_y,
+                      10^(floor(log10(max_y-min_y))),
+                      f = ceiling)
+  r_boundary <- if_else(is.na(r_boundary), 0, r_boundary)
+  s_boundary <- max(t)
+  sign <- sign(max_y)
+
+  
+  fit <- GA::ga(type = "real-valued",
+         fitness = \(p) -sum((y - richard2(t = t,  p[1], p[2], p[3], p[4]))^2),
+         lower   = c(
+           p_max = max_y - 0.01*max_y * sign,
+           p_min = min_y - 0.01*max_y * sign,
+           r_max = -r_boundary,
+           s     = 0),
+         upper = c(
+           p_max = max_y + 0.01*max_y  * sign,
+           p_min = min_y + 0.01*max_y  * sign,
+           r_max = r_boundary,
+           s     = s_boundary),
+         names = c(
+           "p_max",
+           "p_min",
+           "r_max",
+           "s"),
+         popSize = 100,
+         monitor = FALSE)
+  return(fit@solution[1,])
+}
+```
+
+## Load some sample data
+
+```{r}
+test_data_gfp <- readxl::read_excel(
+  path = "/home/thomas/Téléchargements/21-07-03 GFP Gain 150/21-07-03 GFP Gain 150/21-07-03-GFP gain 150.xlsx",
+  sheet = "GFP 150",
+  na = "OVRFLW")
+
+test_data_od <- readxl::read_excel(
+  path = "/home/thomas/Téléchargements/21-07-03 GFP Gain 150/21-07-03 GFP Gain 150/21-07-03-GFP gain 150.xlsx",
+  sheet = "OD600",
+  na = "OVRFLW")
+```
+
+```{r}
+bg_gfp <- 6000
+bg_od <- 0.045
+library(glue)
+library(ggtext)
+library(tidyverse)
+library(fuzzyjoin)
+
+test_data_gfp |> 
+  select(Time, matches("^[A-Za-z]{1}\\d{1,2}")) |> 
+  mutate(Time = (Time - first(Time)) |> as.numeric()/3600) |> 
+  difference_inner_join(
+    test_data_od |> 
+    select(Time, matches("^[A-Za-z]{1}\\d{1,2}")) |> 
+    mutate(Time = (Time - first(Time)) |> as.numeric()/3600),
+    by = c("Time" = "Time"),
+    max_dist = 0.01) |> 
+  pivot_longer(cols = c(matches("^[A-Za-z]{1}\\d{1,2}\\.x"), matches("^[A-Za-z]{1}\\d{1,2}\\.y")),
+               names_to = c("well_bdello", "well_coli"),
+               names_sep = ".") |> 
+  pivot_longer(cols = matches("^[A-Za-z]{1}\\d{1,2}\\.y"),
+               names_to = "well_coli")
+ 
+test_data_gfp |> 
+  select(Time, matches("^[A-Za-z]{1}\\d{1,2}")) |> 
+  mutate(Time = (Time - first(Time)) |> as.numeric()/3600) |> 
+  pivot_longer(cols = matches("^[A-Za-z]{1}\\d{1,2}"),
+               names_to = "well")  |> 
+  mutate(value = value - {{bg_gfp}}) |> 
+  drop_na(value) ->  cleaned_gfp
+
+test_data_od |> 
+  select(Time, matches("^[A-Za-z]{1}\\d{1,2}")) |> 
+  mutate(Time = (Time - first(Time)) |> as.numeric()/3600) |> 
+  pivot_longer(cols = matches("^[A-Za-z]{1}\\d{1,2}"),
+               names_to = "well")  |> 
+    mutate(value = value - {{bg_od}}) |> 
+  drop_na(value) ->  cleaned_od
+
+
+cleaned_gfp|> 
+  group_by(well) |> 
+  nest(data = c(Time, value)) |> 
+  mutate(fit = purrr::map(data, ~fit_richard2(.$value, .$Time))) |> 
+  unnest_wider(fit) |> 
+  select(-data) -> parameters_gfp
+
+
+cleaned_od|> 
+  group_by(well) |> 
+  nest(data = c(Time, value)) |> 
+  mutate(fit = purrr::map(data, ~fit_richard2(.$value, .$Time))) |> 
+  unnest_wider(fit) |> 
+  select(-data) -> parameters_od
+
+parameters_gfp |> 
+  inner_join(parameters_od,
+             by = c("well"= "well"),
+             suffix = c("_bb", "_ec")) |> 
+  inner_join(cleaned_od) |> 
+  group_by(well) |> 
+  mutate(
+    r_max_bb = r_max_bb/(p_max_bb - p_min_bb),
+    r_max_ec = r_max_ec/(p_max_ec - p_min_ec),
+    across(c(p_max_bb,p_min_bb), .fns = ~(. - p_min_bb)/(p_max_bb - p_min_bb)),
+    across(c(p_max_ec,p_min_ec), .fns = ~(. - p_min_ec)/(p_max_ec - p_min_ec)))|> 
+  rowwise() |> 
+  mutate(fit_bb = richard2(Time, p_max_bb, p_min_bb, r_max_bb, s_bb),
+         fit_ec = richard2(Time, p_max_ec, p_min_ec, r_max_ec, s_ec),
+         fit_sum = fit_ec - fit_bb)  |> 
+  ggplot(aes(x = Time)) +
+  geom_line(aes(y=fit_bb), color = "red") +
+  geom_line(aes(y=fit_ec), color = "blue") +
+  geom_line(aes(y=fit_bb), color = "red") +
+  geom_line(aes(y=fit_ec), color = "blue") +
+#  geom_line(aes(y=fit_sum), color = "green")+
+  facet_wrap(~well)+
+  theme_minimal() -> plt
+
+
+  
+cleaned_od |> arrange(well)
+parameters |> 
+  mutate(annot = glue("rate<sub>max</sub> {sprintf('%0.2f', r_max)}")) -> annot
+
+cleaned_gfp |>
+  inner_join(parameters) |> 
+  arrange(well) |> 
+  rowwise() |> 
+  mutate(fit = richard2(Time, p_max, p_min, r_max, s),
+#         max_r_t = ((log(abs(-(-p_min+(3*p_max)) / (p_min+p_max))) * (p_min-p_max))/(4*r_max))+s,
+#         max_r_y = richard2(max_r_t, p_max, p_min, r_max, s),
+#         test = max_r_y - ((p_max - p_min)/2 + p_min),
+         annot = glue("rate<sub>max</sub> {sprintf('%0.2f', r_max)}")) |> 
+  ggplot(aes(x = Time, y = value, group = well), color = "black") +
+  geom_line() +
+  geom_line(aes(x = Time, y = fit,  group = well), color = "red") +
+ # geom_vline(aes(xintercept = max_r_t)) +
+  geom_hline(aes(yintercept = p_max), color = "green") +
+  geom_hline(aes(yintercept = p_min), color = "green") +
+ # geom_richtext(aes(label = annot), x = 5, y = 4500, hjust = 1, vjust = 1) +
+  facet_wrap(~well) +
+  theme_minimal()
+  
+
+```
+
+```{r}
+svg("~/curves_normal.svg", width = 16, height = 10)
+plt
+dev.off()
+
+```
+
+$$
+ t=\frac{\ln \left(\frac{A-Y}{Y-B}\right)\left(B-A\right)}{4r}+s \\
+t=\frac{\ln \left(-\frac{-B+3A}{B+A}\right)\left(B-A\right)}{4r}+s
+$$
+
+```{r}
+library(deSolve)
+
+LV <- function(alpha, beta,sigma,gamma, N1i, N2i, r1, r2, times) {
+  
+  LV_equations <- function(time, variables, parameters) {
+    with(as.list(c(variables, parameters)), {
+      dN1 <- alpha*preys - (beta*preys*predators)
+      dN2 <- sigma*preys*predators - (gamma*predators)  
+      return(list(c(dN1, dN2)))
+    })
+  }
+  
+  parameters_values <- c(alpha=alpha,
+                         beta=beta,
+                         sigma=sigma,
+                         gamma=gamma)
+  
+  initial_values <- c(preys=N1i, predators=N2i)
+  
+  out <- ode(initial_values, times, LV_equations, parameters_values)
+  
+  as.data.frame(out)
+}
+
+out <- LV(alpha=0,
+          beta=0.25,
+          sigma=0.205, gamma=0.3/24 ,N1i=1, N2i=0.1,times=seq(0,24,1))
+
+plot(x=out[,1], y=out[,2], type = "l")
+lines(x=out[,1], y=out[,3], col="red")
+
+
+```
